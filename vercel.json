@@ -1,7 +1,8 @@
 {
   "functions": {
     "api/image.py": {
-      "runtime": "@vercel/python@3.0.0"
+      "runtime": "@vercel/python@3.0.0",
+      "runtimeVersion": "3.9"
     }
   },
   "routes": [
