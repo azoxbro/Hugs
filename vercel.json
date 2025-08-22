@@ -1,1 +1,13 @@
-
+{
+  "functions": {
+    "api/image.py": {
+      "runtime": "@vercel/python@3.0.0"
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/api/image.py"
+    }
+  ]
+}
